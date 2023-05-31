@@ -76,12 +76,19 @@ int main(int argc, char** argv)
     // Initialize incrementing variables
     size_t count = 0;
     size_t total = 0;
+    size_t lost_to_plus2 = 0;
+    size_t lost_to_dnf = 0;
     // Loop through for each line in the file
     // Then increment count if current solve from line is faster than target
     // Then increment total
+    // Then increment lost_to_plus2 if it's a plus 2
+    // Then increment lost_to_dnf if it's a dnf
     // Display information like below
     /*
-        count / total met the target equating to about x.yz%
+        from {DATE} to {DATE}:
+        {count} / {total} met the target equating to about {x.yz}%
+        sadly {lost_to_plus2} didn't meet the target because of a plus 2
+        sadly {lost_to_dnf} didn't meet the target because of a dnf
     */
 
     //printf("%.2f\n", target);
