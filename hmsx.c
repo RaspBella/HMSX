@@ -75,7 +75,7 @@ int main(int argc, char** argv)
         bool decimal = false;
         for (size_t i = 0; i < strlen(argv[2]); i++)
         {
-            if (argv[2][i] == '.') // if indexly decimal point
+            if (argv[2][i] == '.') // if currently decimal point
             {
                 if (decimal) // if already decimal point
                 {
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
                 }
                 else decimal = true;
             }
-            else if (!(argv[2][i] >= '0' && argv[2][i] <= '9')) // if indexly not digit
+            else if (!(argv[2][i] >= '0' && argv[2][i] <= '9')) // if currently not digit
             {
                 printf("Invalid number\nInvalid digit: %c found in %s\n", argv[2][i], argv[2]);
                 for (size_t j = 0; j < i; j++) printf(" ");
