@@ -2,7 +2,7 @@ SRC=hmsx.c
 BIN=hmsx
 
 CC=gcc
-CFLAGS=-Wall -O3
+CFLAGS=-Wall -O3 -D_XOPEN_SOURCE=700
 
 $(BIN): $(SRC)
 	$(CC) $(CFLAGS) $< -o $@
