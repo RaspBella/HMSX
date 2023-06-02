@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #define DEFAULT_TARGET 9.85
 #define DATE_FORMAT "%Y-%m-%d %H:%M:%S"
@@ -21,9 +22,68 @@ typedef struct
     bool plus2;
     bool dnf;
     struct tm* time;
-    float result;
+    double_t result;
 }
 Solve;
+
+char** split_string(const char* str, char delim)
+{
+    size_t count = 0;
+    const char* p = str;
+    while (*p)
+    {
+        if (*p == delim) count++;
+        p++;
+    }
+    count++; // Last or only item
+
+    // Memory allocation for array of char*
+    char** list = (char**)malloc((count+1) * sizeof(char*));
+    if (list == NULL)
+    {
+        printf("Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Split the string and store the substrings
+    size_t index = 0;
+    const char* start = str;
+    p = str;
+    while (*p)
+    {
+        if (*p == delim)
+        {
+            size_t len = p - start;
+            list[index] = (char*)malloc((len+1) * sizeof(char));
+            if (list[index] == NULL)
+            {
+                printf("Memory allocation failed\n");
+                exit(EXIT_FAILURE);
+            }
+            strncpy(list[index], start, len);
+            list[index][len] = '\0';
+            index++;
+            start = p+1;
+        }
+        p++;
+    }
+
+    // Deal with the last or only char*
+    size_t len = p - start;
+    list[index] = (char*)malloc((len+1) * sizeof(char));
+    if (list[index] == NULL)
+    {
+        printf("Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+    strncpy(list[index], start, len);
+    list[index][len] = '\0';
+
+    // Set the final NULL pointer
+    list[count] = NULL;
+
+    return list;
+}
 
 // For checking the solve whilst in development
 void print_solve(Solve solve)
@@ -69,7 +129,7 @@ int main(int argc, char** argv)
     }
 
     // Checking optionally provided target that is a number
-    float target;
+    double_t target;
     if (argc == 3) // if provided
     {
         bool decimal = false;
@@ -117,6 +177,12 @@ int main(int argc, char** argv)
     }
 
     // Allocate solves array
+    if (count.total < 1)
+    {
+        printf("No solves!?\n");
+        fclose(fp);
+        return EXIT_FAILURE;
+    }
     Solve* solves = malloc(sizeof(Solve) * count.total);
 
 
@@ -136,10 +202,10 @@ int main(int argc, char** argv)
 
     while (getline(&line.value, &line.size, fp) != EOF) // Go through lines in file
     {
-        char* token = strtok(line.value, ";"); // Get first token in line
-        if (token == NULL) continue; // If token is empty continue to next line
+        char** str_list = split_string(line.value, ';');
 
-        size_t index = atol(token)-1; // Index is one less than solve number
+        // Solve number is elem 0
+        size_t index = atol(str_list[0])-1; // Index is one less than solve number
 
         // Initializing the current solve
         solves[index].plus2 = false;
@@ -153,42 +219,37 @@ int main(int argc, char** argv)
         solves[index].time = localtime(&rawtime);
         solves[index].result = 0.00;
 
-        for (size_t i = 1; i < 6; i++) // Loop through for rest of tokens using a counter
+        // Time is elem 1
+        switch (str_list[1][strlen(str_list[1])-1]) // Check last charater of "Time"
         {
-            if (token == NULL) break; // If empty escape
+            case ')': // DNF's have bracket as last like DNF(9.23)
+                solves[index].dnf = true;
+                break;
 
-            if (i == 1) // Token 1 of line is for "Time"
-            {
-                switch (token[strlen(token)-1]) // Check last charater of "Time"
-                {
-                    case ')': // DNF's have bracket as last like DNF(9.23)
-                        solves[index].dnf = true;
-                        break;
-
-                    case '+': // Plus 2's simply have a + like 11.23+
-                        solves[index].plus2 = true;
-                        break;
-                }
-            }
-
-            if (i == 4) // Token 4 of line is for "Date"
-            {
-                if (strptime(token, DATE_FORMAT, solves[index].time) == NULL) // Uh oh if this is true but otherwise amazing
-                {
-                    printf("Error scanning date\n");
-                    // Free memory, close file and then exit
-                    free(line.value);
-                    fclose(fp);
-                    free(solves);
-                    return EXIT_FAILURE;
-                }
-            }
-
-            if (i == 5) solves[index].result = atof(token); // Token 5 of line is for "P.1"
-            // Which is used to set result
-
-            token = strtok(NULL, ";"); // Get next token
+            case '+': // Plus 2's simply have a + like 11.23+
+                solves[index].plus2 = true;
+                break;
         }
+        
+        // Date is elem 4
+        if (strptime(str_list[4], DATE_FORMAT, solves[index].time) == NULL) // Uh oh if this is true but otherwise amazing
+        {
+            printf("Error scanning date for solve %ld\ndate: %s\n", index+1, str_list[4]);
+            // Free memory, close file and then exit
+            for (size_t i = 0; i < 6; i++) free(str_list[i]);
+            free(str_list);
+            free(line.value);
+            fclose(fp);
+            free(solves);
+            return EXIT_FAILURE;
+        }
+
+        // P.1 is elem 5
+        solves[index].result = atof(str_list[5]); // Token 5 of line is for "P.1"
+
+        // Free the list
+        for (size_t i = 0; i < 6; i++) free(str_list[i]);
+        free(str_list);
     }
 
     free(line.value); // Free memory after finnished reading lines
@@ -202,6 +263,32 @@ int main(int argc, char** argv)
         #################
     */
 
+    for (size_t i = 0; i < count.total; i++) // Go through solves with an index i
+    {
+        if (solves[i].dnf) // If current solve is a DNF
+        {
+            // Check if it would've met the target without the DNF
+            if (solves[i].result < target) count.lost_to_dnf++;
+        }
+        else if (solves[i].plus2) // If current solve is a plus 2
+        {
+            // Check result because doesn't include the 2 seconds
+            if (solves[i].result < target) count.lost_to_plus2++;
+        }
+        else // Otherwise must be no penalty
+        {
+            // Just check result
+            if (solves[i].result < target) count.achieved++;
+        }
+        if (solves[i].result < target) // Check wether result meets target
+        {
+            if (solves[i].dnf) count.lost_to_dnf++; // If DNF
+            // If plus 2 would cause result to not meet target (result doesn't count +2's 🤣)
+            else if (solves[i].plus2 && !(solves[i].result+2 < target)) count.lost_to_plus2++;
+            else count.achieved++; // Otherwise great
+        }
+    }
+
 
 
     /*
@@ -210,13 +297,35 @@ int main(int argc, char** argv)
         ##########################
     */
 
-    // Display information like below
-    /*
-        from {DATE} to {DATE}:
-        {count} / {total} met the target equating to about {x.yz}%
-        sadly {lost_to_plus2} didn't meet the target because of a plus 2
-        sadly {lost_to_dnf} didn't meet the target because of a dnf
-    */
+    if (count.total > 1)
+    {
+        printf(
+            "From %d-%d-%d to %d-%d-%d:\n",
+            solves[0].time->tm_year+1900,
+            solves[0].time->tm_mon,
+            solves[0].time->tm_mday,
+            solves[count.total-1].time->tm_year+1900,
+            solves[count.total-1].time->tm_mon,
+            solves[count.total-1].time->tm_mday
+        );
+    }
+    else
+    {
+        printf(
+            "From %d-%d-%d:\n",
+            solves[0].time->tm_year+1900,
+            solves[0].time->tm_mon,
+            solves[0].time->tm_mday
+        );
+    }
+
+    printf("%ld / %ld met the target, as a percentage(to 2 decimal places): %.2f%%\n", count.achieved, count.total, (double_t)count.achieved/count.total*100);
+
+    if (count.lost_to_plus2) // Any value other than 0 is true
+        printf("sadly %ld didn't meet the target because of a plus 2\n", count.lost_to_plus2);
+    
+    if (count.lost_to_dnf) // Any value other than 0 is true
+        printf("sadly %ld didn't meet the target because of a dnf\n", count.lost_to_dnf);
 
     free(solves); // Free memory after finnished
 }
