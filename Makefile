@@ -1,14 +1,10 @@
 SRC=hmsx.c
 BIN=hmsx
 
-CC=gcc
-CFLAGS=-Wall -O3 -D_XOPEN_SOURCE=700
+CFLAGS=-Wall -Werror -Og -ggdb3
 
 $(BIN): $(SRC)
-	$(CC) $(CFLAGS) $< -o $@
-
-test:
-	make CFLAGS="$(CFLAGS) -Og -ggdb3"
+	cc $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(BIN)
+	rm $(BIN)
