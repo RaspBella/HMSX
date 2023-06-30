@@ -204,7 +204,7 @@ int main(int argc, char** argv)
         printf("sadly %zu didn't meet the target because of a dnf\n", count.lost_to_dnf);
 
     // Display solves
-    print_cstimer_solves(cstimer_solves, 0, count.total);
+    //print_cstimer_solves(cstimer_solves, 0, count.total);
 
     // Free cstimer solves
     for (size_t i = 0; i < count.total; i++)
