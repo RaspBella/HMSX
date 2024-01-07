@@ -1,10 +1,17 @@
-SRC=hmsx.c
-BIN=hmsx
+src=$(wildcard src/*.c)
+obj=$(patsubst src/%.c, obj/%.o, ${src})
+inc=inc
+bin=hmsx
 
-CFLAGS=-Wall -Werror -Og -ggdb3
+cflags=-O3
 
-$(BIN): $(SRC)
-	cc $(CFLAGS) $< -o $@
+default: ${bin}
+
+${bin}: ${obj}
+	cc ${cflags} $^ -o $@
+
+obj/%.o: src/%.c
+	cc ${cflags} -I${inc} -c $< -o $@
 
 clean:
-	rm $(BIN)
+	rm -f ${obj} ${bin}
