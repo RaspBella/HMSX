@@ -14,13 +14,7 @@ size_t solve_count = 0;
 struct Solve
 {
     float time;
-    unsigned _BitInt(2) state;
-};
-
-struct __attribute__ ((packed)) Packed_solve
-{
-    float time;
-    unsigned _BitInt(2) state;
+    unsigned short state;
 };
 
 static size_t count_solves(FILE *fp)
@@ -40,7 +34,7 @@ static size_t count_solves(FILE *fp)
 	    break;
 	}
 
-    return newline_count - 1;
+    return newline_count;
 }
 
 static bool parse_solve(Solve *solve, const char *str)
@@ -103,7 +97,7 @@ Solve *read_solves(FILE *fp)
     return solve_p;
 }
 
-static void print_solve(const Solve *solve, size_t n)
+void print_solve(const Solve *solve, size_t n)
 {
     switch (solve->state)
     {
@@ -121,31 +115,13 @@ static void print_solve(const Solve *solve, size_t n)
     }
 }
 
-static void print_solves(const Solve *solve_p)
+void print_solves(const Solve *solve_p)
 {
     for (size_t i = 0; i < solve_count; i++)
 	print_solve(solve_p + i, i+1);
 }
 
-void free_solves(Solve *solve_p, bool info)
+void free_solves(Solve *solve_p)
 {
-    if (info)
-    {
-	print_solves(solve_p);
-
-	printf("sizeof(Solve): %zu\n", sizeof(struct Solve));
-	printf("sizeof(Packed_solve): %zu\n", sizeof(struct Packed_solve));
-	printf("solve count: %zu\n", solve_count);
-
-	const size_t buh[] = {
-	    sizeof(struct Solve) * solve_count,
-	    sizeof(struct Packed_solve) * solve_count
-	};
-
-	printf("%zu * %zu = %zu\n", sizeof(struct Solve), solve_count, buh[0]);
-	printf("%zu * %zu = %zu\n", sizeof(struct Packed_solve), solve_count, buh[1]);
-
-    }
-
     free(solve_p);
 }

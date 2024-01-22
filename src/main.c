@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 #include <solve.h>
 #include <stdbool.h>
 
@@ -46,12 +47,14 @@ int main(int argc, char **argv)
     init(argc, argv);
 
     Solve *solve_p = read_solves(fp);
+
+    print_solves(solve_p);
     
     fclose(fp);
 
     if (solve_p)
     {
-	free_solves(solve_p, true);
+	free_solves(solve_p);
     }
 
     return 0;
