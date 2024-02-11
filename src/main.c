@@ -47,10 +47,10 @@ int main(int argc, char **argv)
     init(argc, argv);
 
     Solve *solve_p = read_solves(fp);
-
-    print_solves(solve_p);
     
     fclose(fp);
+
+    evaluate_solves(solve_p, target);
 
     if (solve_p)
     {

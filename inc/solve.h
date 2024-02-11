@@ -8,6 +8,5 @@ extern size_t solve_count;
 typedef struct Solve Solve;
 
 Solve *read_solves(FILE*);
+void evaluate_solves(Solve*, float);
 void free_solves(Solve*);
-void print_solve(const Solve*, size_t);
-void print_solves(const Solve*);

@@ -97,7 +97,7 @@ Solve *read_solves(FILE *fp)
     return solve_p;
 }
 
-void print_solve(const Solve *solve, size_t n)
+static void print_solve(const Solve *solve, size_t n)
 {
     switch (solve->state)
     {
@@ -115,10 +115,46 @@ void print_solve(const Solve *solve, size_t n)
     }
 }
 
-void print_solves(const Solve *solve_p)
+static void print_solves(const Solve *solve_p)
 {
     for (size_t i = 0; i < solve_count; i++)
 	print_solve(solve_p + i, i+1);
+}
+
+void evaluate_solves(Solve *solve_p, float target)
+{
+    // some counters
+    size_t pass = 0;
+    size_t miss_by_plus2 = 0;
+    size_t miss_by_dnf = 0;
+    size_t miss = 0;
+
+    for (size_t i = 0; i < solve_count; i++)
+    {
+	switch (solve_p[i].state)
+	{
+	    case SOLVED:
+		if (solve_p[i].time < target) pass++;
+		else miss++;
+		break;
+
+	    case PLUS2:
+		if (solve_p[i].time < target) pass++;
+		else if ((solve_p[i].time - 2) < target) miss_by_plus2++;
+		else miss++;
+		break;
+
+	    case DNF:
+		if (solve_p[i].time < target) miss_by_dnf++;
+		else miss++;
+		break;
+	}
+    }
+
+    printf("%zu/%zu met the target\n", pass, solve_count);
+    if (miss_by_plus2) printf("%zu would've met target if not plus 2\n", miss_by_plus2);
+    if (miss_by_dnf) printf("%zu would've met target if not dnf\n", miss_by_dnf);
+    if (miss) printf("%zu non penalty solves don't meet the target\n", miss);
 }
 
 void free_solves(Solve *solve_p)
