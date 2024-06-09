@@ -1,61 +1,41 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
-#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
 #include <solve.h>
-#include <stdbool.h>
 
-FILE *fp;
-float target;
-
-void init(int argc, char **argv)
-{
-    if (argc < 3)
-    {
-	fprintf(stderr, "Usage: %s `file.csv` `9.85`\n", *argv);
-
-	exit(EXIT_FAILURE);
-    }
-
-
-
-    fp = fopen(argv[1], "r");
-
-    if (!fp) // check if NULL
-    {
-	fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
-
-	exit(EXIT_FAILURE);
-    }
-
-
-
-    target = atof(argv[2]);
-
-    if (!target)
-    {
-	fprintf(stderr, "Please provide a float that is not 0\n");
-
-	fclose(fp);
-
-	exit(EXIT_FAILURE);
-    }
-}
+int fd;
+struct stat sb;
+char *bytes;
+solve *solves;
 
 int main(int argc, char **argv)
 {
-    init(argc, argv);
-
-    Solve *solve_p = read_solves(fp);
-    
-    fclose(fp);
-
-    evaluate_solves(solve_p, target);
-
-    if (solve_p)
-    {
-	free_solves(solve_p);
+    if (argc != 3) {
+	fprintf(stderr, "usage: %s `session.csv` `target time to beat`\n", *argv);
+	exit(EXIT_FAILURE);
     }
 
-    return 0;
+    fd = open(argv[1], O_RDONLY, S_IRUSR | S_IWUSR);
+
+    if (fstat(fd, &sb) == -1) {
+	fprintf(stderr, "file: %s not found\n", argv[1]);
+	close(fd);
+	exit(EXIT_FAILURE);
+    }
+
+    bytes = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+
+    solves = new_solves_from_bytes(bytes, sb.st_size);
+
+    
+
+    free_solves(solves);
+
+    munmap(bytes, sb.st_size);
+
+    close(fd);
 }

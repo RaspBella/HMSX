@@ -3,7 +3,7 @@ obj=$(patsubst src/%.c, obj/%.o, ${src})
 inc=inc
 bin=hmsx
 
-cflags=-O3
+cflags=-Og -ggdb3 -Wall -Wextra
 
 default: ${bin}
 
