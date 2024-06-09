@@ -5,12 +5,12 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include <solve.h>
+#include <solves.h>
 
 int fd;
 struct stat sb;
 char *bytes;
-solve *solves;
+solves *solves_data;
 
 int main(int argc, char **argv)
 {
@@ -29,11 +29,11 @@ int main(int argc, char **argv)
 
     bytes = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 
-    solves = new_solves_from_bytes(bytes, sb.st_size);
+    solves_data = new_solves_from_bytes(bytes, sb.st_size);
 
     
 
-    free_solves(solves);
+    free_solves(solves_data);
 
     munmap(bytes, sb.st_size);
 
